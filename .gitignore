@@ -1,3 +1,8 @@
 .env
 googlestuff/berkeley-quest-92e8d66fb688.json
 streamlit/secrets.toml
+
+# Files larger than 50MB
+filt2.csv
+filt3.csv
+vectorizedDB.csv
