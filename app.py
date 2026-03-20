@@ -2,14 +2,15 @@ import ast
 import numpy as np
 import pandas as pd
 import streamlit as st
-import openai
+from openai import OpenAI
 import os
-from openai.embeddings_utils import get_embedding
 from dotenv import load_dotenv
 
 load_dotenv()
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+def get_openai_client():
+    return OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 DATA_URL = "filt3.csv"
 
 @st.cache_data
@@ -19,13 +20,18 @@ def blending_wonders():
     df['UnitDeranged'] = df['UnitDeranged'].apply(ast.literal_eval)
     return df
 
-@st.cache_data
 def brewing_magic(search_query, df):
-    search_embedding = get_embedding(search_query, engine='text-embedding-ada-002')
+    client = get_openai_client()
+    response = client.embeddings.create(
+        input=search_query,
+        model="text-embedding-ada-002"
+    )
+    search_embedding = response.data[0].embedding
+    df = df.copy()
     embeddings = np.array(df["embeddings"].tolist())
     similarities = np.dot(embeddings, search_embedding) / (np.linalg.norm(embeddings, axis=1) * np.linalg.norm(search_embedding))
     df["similarities"] = similarities
-    df.sort_values(by="similarities", ascending=False, inplace=True)
+    df = df.sort_values(by="similarities", ascending=False)
     return df.head(15)
 
 def display_result_card(result):
@@ -127,7 +133,7 @@ def main():
     #st.markdown("<p style='text-align: center; margin-top: 20px; color: #ccc;'>Currently in beta with upcoming features</p>", unsafe_allow_html=True)
     st.markdown("<hr margintop: 20px>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; margin-top: 25;'>made with love by <a href='https://ethanjagoda.me' target='_blank'>Ethan Jagoda</a></p>", unsafe_allow_html=True)
-    st.markdown("<div style='text-align: center; margin-top: 10px;'><a href='https://www.buymeacoffee.com/jaysethi' target='_blank'><img src='https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png' alt='Buy Me A Coffee' width='150' ></a></div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align: center; margin-top: 10px;'><a href='https://buymeacoffee.com/ethanjagoda' target='_blank'><img src='https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png' alt='Buy Me A Coffee' width='150' ></a></div>", unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
